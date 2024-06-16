@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToDoListApp.Api.Interfaces;
@@ -10,7 +11,7 @@ namespace ToDoListApp.Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/users")]
-public class UserController(IRepository<User> userRepository) : ControllerBase, IUserController
+public class UserController(IRepository<User> userRepository, IMapper mapper) : ControllerBase, IUserController
 {
     [HttpGet("{id}")]
     public ActionResult<UserResponseDto> GetUser(int id)
@@ -26,7 +27,7 @@ public class UserController(IRepository<User> userRepository) : ControllerBase, 
         if (user is null)
             return NotFound();
 
-        var response = new UserResponseDto(user.Id, user.Username, user.FirstName);
+        var response = mapper.Map<UserResponseDto>(user);
         return Ok(response);
     }
 
@@ -44,9 +45,10 @@ public class UserController(IRepository<User> userRepository) : ControllerBase, 
         if (user is null)
             return NotFound();
 
-        user.FirstName = newUser.FirstName;
+        mapper.Map(newUser, user);
+        userRepository.Update(user);
         
-        var response = new UserResponseDto(user.Id, user.Username, user.FirstName);
+        var response = mapper.Map<UserResponseDto>(user);
         return Ok(response);
     }
 
@@ -66,7 +68,7 @@ public class UserController(IRepository<User> userRepository) : ControllerBase, 
         
         userRepository.Remove(user);
         
-        var response = new UserResponseDto(user.Id, user.Username, user.FirstName);
+        var response = mapper.Map<UserResponseDto>(user);
         return Ok(response);
     }
 }

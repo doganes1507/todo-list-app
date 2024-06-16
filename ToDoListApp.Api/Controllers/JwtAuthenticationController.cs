@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -12,7 +13,7 @@ namespace ToDoListApp.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class JwtAuthenticationController(IRepository<User> userRepository, IConfiguration configuration)
+public class JwtAuthenticationController(IRepository<User> userRepository, IConfiguration configuration, IMapper mapper)
     : ControllerBase, IAuthenticationController
 {
     [HttpPost("register")]
@@ -29,7 +30,9 @@ public class JwtAuthenticationController(IRepository<User> userRepository, IConf
         };
 
         userRepository.Add(user);
-        return Ok(new UserResponseDto(user.Id, user.Username, user.FirstName));
+
+        var response = mapper.Map<UserResponseDto>(user);
+        return Ok(response);
     }
 
     [HttpPost("login")]
@@ -84,7 +87,7 @@ public class JwtAuthenticationController(IRepository<User> userRepository, IConf
 
         return Ok();
     }
-    
+
     private string CreateToken(User user)
     {
         var claims = new List<Claim>

@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ToDoListApp.Api.Data;
 using ToDoListApp.Api.Interfaces;
+using ToDoListApp.Api.Mappings;
 using ToDoListApp.Api.Models;
 using ToDoListApp.Api.Repositories;
 using Task = ToDoListApp.Api.Models.Task;
@@ -70,6 +71,8 @@ builder.Services.AddDbContext<DataContext>(options =>
 builder.Services.AddScoped<IRepository<User>, DbRepository<User>>();
 builder.Services.AddScoped<IRepository<TaskList>, DbRepository<TaskList>>();
 builder.Services.AddScoped<IRepository<Task>, DbRepository<Task>>();
+
+builder.Services.AddAutoMapper(typeof(TaskProfile), typeof(TaskListProfile), typeof(UserProfile));
 
 var app = builder.Build();
 

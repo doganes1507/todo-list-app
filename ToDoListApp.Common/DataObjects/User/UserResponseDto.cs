@@ -1,8 +1,8 @@
 ﻿namespace ToDoListApp.Common.DataObjects.User;
 
-public class UserResponseDto(int id, string username, string firstName)
+public class UserResponseDto
 {
-    public int Id { get; set; } = id;
-    public string Username { get; set; } = username;
-    public string FirstName { get; set; } = firstName;
+    public int Id { get; set; }
+    public string Username { get; set; }
+    public string FirstName { get; set; }
 }

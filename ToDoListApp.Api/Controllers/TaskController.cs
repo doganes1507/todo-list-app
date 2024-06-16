@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToDoListApp.Api.Interfaces;
@@ -11,7 +12,8 @@ namespace ToDoListApp.Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/tasks")]
-public class TaskController(IRepository<Task> taskRepository, IRepository<TaskList> taskListRepository) : ControllerBase, ITaskController
+public class TaskController(IRepository<Task> taskRepository, IRepository<TaskList> taskListRepository, IMapper mapper)
+    : ControllerBase, ITaskController
 {
     [HttpGet]
     public ActionResult<List<TaskResponseDto>> GetTasks()
@@ -22,15 +24,7 @@ public class TaskController(IRepository<Task> taskRepository, IRepository<TaskLi
 
         var response = taskRepository
             .FindAll(task => task.TaskList.UserId == int.Parse(idFromToken))
-            .Select(task => new TaskResponseDto(
-                task.Id,
-                task.Title,
-                task.Description,
-                task.CreationDate,
-                task.DueDate,
-                task.IsCompleted,
-                task.TaskListId
-            ))
+            .Select(mapper.Map<TaskResponseDto>)
             .ToList();
 
         return Ok(response);
@@ -50,15 +44,7 @@ public class TaskController(IRepository<Task> taskRepository, IRepository<TaskLi
         if (task.TaskList.UserId != int.Parse(idFromToken))
             return Forbid();
 
-        var response = new TaskResponseDto(
-            task.Id,
-            task.Title,
-            task.Description,
-            task.CreationDate,
-            task.DueDate,
-            task.IsCompleted,
-            task.TaskListId
-        );
+        var response = mapper.Map<TaskResponseDto>(task);
 
         return Ok(response);
     }
@@ -77,27 +63,11 @@ public class TaskController(IRepository<Task> taskRepository, IRepository<TaskLi
         if (targetTaskList.UserId != int.Parse(idFromToken))
             return Forbid();
 
-        var task = new Task
-        {
-            Title = newTask.Title,
-            Description = newTask.Description,
-            CreationDate = DateTime.Now,
-            DueDate = newTask.DueDate,
-            IsCompleted = false,
-            TaskListId = newTask.TaskListId
-        };
-        
+        var task = mapper.Map<Task>(newTask);
+
         taskRepository.Add(task);
 
-        var response = new TaskResponseDto(
-            task.Id,
-            task.Title,
-            task.Description,
-            task.CreationDate, 
-            task.DueDate,
-            task.IsCompleted,
-            task.TaskListId
-        );
+        var response = mapper.Map<TaskResponseDto>(task);
 
         return Ok(response);
     }
@@ -116,20 +86,10 @@ public class TaskController(IRepository<Task> taskRepository, IRepository<TaskLi
         if (task.TaskList.UserId != int.Parse(idFromToken))
             return Forbid();
 
-        task.Title = newTask.Title;
-        task.Description = task.Description;
-        task.DueDate = newTask.DueDate;
-        task.IsCompleted = newTask.IsCompleted;
+        mapper.Map(newTask, task);
+        taskRepository.Update(task);
         
-        var response = new TaskResponseDto(
-            task.Id,
-            task.Title,
-            task.Description,
-            task.CreationDate, 
-            task.DueDate,
-            task.IsCompleted,
-            task.TaskListId
-        );
+        var response = mapper.Map<TaskResponseDto>(task);
 
         return Ok(response);
     }
@@ -147,18 +107,10 @@ public class TaskController(IRepository<Task> taskRepository, IRepository<TaskLi
 
         if (task.TaskList.UserId != int.Parse(idFromToken))
             return Forbid();
-        
+
         taskRepository.Remove(task);
-        
-        var response = new TaskResponseDto(
-            task.Id,
-            task.Title,
-            task.Description,
-            task.CreationDate, 
-            task.DueDate,
-            task.IsCompleted,
-            task.TaskListId
-        );
+
+        var response = mapper.Map<TaskResponseDto>(task);
 
         return Ok(response);
     }

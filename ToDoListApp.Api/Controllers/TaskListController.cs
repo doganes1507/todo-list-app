@@ -1,18 +1,19 @@
 ﻿using System.Security.Claims;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToDoListApp.Api.Interfaces;
 using ToDoListApp.Api.Models;
 using ToDoListApp.Common.DataObjects.Task;
 using ToDoListApp.Common.DataObjects.TaskList;
-using Task = ToDoListApp.Api.Models.Task;
 
 namespace ToDoListApp.Api.Controllers;
 
 [Authorize]
 [ApiController]
 [Route("api/tasklists")]
-public class TaskListController(IRepository<TaskList> taskListRepository) : ControllerBase, ITaskListController
+public class TaskListController(IRepository<TaskList> taskListRepository, IMapper mapper)
+    : ControllerBase, ITaskListController
 {
     [HttpGet]
     public ActionResult<List<TaskListResponseDto>> GetTaskLists()
@@ -23,8 +24,7 @@ public class TaskListController(IRepository<TaskList> taskListRepository) : Cont
 
         var response = taskListRepository
             .FindAll(taskList => taskList.UserId == int.Parse(idFromToken))
-            .Select(taskList =>
-                new TaskListResponseDto(taskList.Id, taskList.Title, taskList.Description, taskList.UserId))
+            .Select(mapper.Map<TaskListResponseDto>)
             .ToList();
 
         return Ok(response);
@@ -44,7 +44,7 @@ public class TaskListController(IRepository<TaskList> taskListRepository) : Cont
         if (taskList.UserId != int.Parse(idFromToken))
             return Forbid();
 
-        var response = new TaskListResponseDto(taskList.Id, taskList.Title, taskList.Description, taskList.UserId);
+        var response = mapper.Map<TaskListResponseDto>(taskList);
         return Ok(response);
     }
 
@@ -61,19 +61,9 @@ public class TaskListController(IRepository<TaskList> taskListRepository) : Cont
 
         if (taskList.UserId != int.Parse(idFromToken))
             return Forbid();
-        
-        var response = taskList.Tasks.Select(task =>
-            new TaskResponseDto(
-                task.Id,
-                task.Title,
-                task.Description,
-                task.CreationDate,
-                task.DueDate,
-                task.IsCompleted,
-                task.TaskListId
-            )
-        ).ToList();
-        
+
+        var response = taskList.Tasks.Select(mapper.Map<TaskResponseDto>).ToList();
+
         return Ok(response);
     }
 
@@ -84,16 +74,12 @@ public class TaskListController(IRepository<TaskList> taskListRepository) : Cont
         if (idFromToken is null)
             return Unauthorized();
 
-        var taskList = new TaskList
-        {
-            Title = newTaskList.Title,
-            Description = newTaskList.Description,
-            UserId = int.Parse(idFromToken)
-        };
+        var taskList = mapper.Map<TaskList>(newTaskList);
+        taskList.UserId = int.Parse(idFromToken);
 
         taskListRepository.Add(taskList);
 
-        var response = new TaskListResponseDto(taskList.Id, taskList.Title, taskList.Description, taskList.UserId);
+        var response = mapper.Map<TaskListResponseDto>(taskList);
         return Ok(response);
     }
 
@@ -111,10 +97,10 @@ public class TaskListController(IRepository<TaskList> taskListRepository) : Cont
         if (taskList.UserId != int.Parse(idFromToken))
             return Forbid();
 
-        taskList.Title = newTaskList.Title;
-        taskList.Description = newTaskList.Description;
+        mapper.Map(newTaskList, taskList);
+        taskListRepository.Update(taskList);
 
-        var response = new TaskListResponseDto(taskList.Id, taskList.Title, taskList.Description, taskList.UserId);
+        var response = mapper.Map<TaskListResponseDto>(taskList);
         return Ok(response);
     }
 
@@ -134,7 +120,7 @@ public class TaskListController(IRepository<TaskList> taskListRepository) : Cont
 
         taskListRepository.Remove(taskList);
 
-        var response = new TaskListResponseDto(taskList.Id, taskList.Title, taskList.Description, taskList.UserId);
+        var response = mapper.Map<TaskListResponseDto>(taskList);
         return Ok(response);
     }
 }
